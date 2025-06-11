@@ -8,15 +8,17 @@ import matplotlib.pyplot as plt
 # --- Page Configuration ---
 st.set_page_config(page_title="🎬 Movie Recommender", layout="centered")
 
-# --- Background Image CSS ---
+# --- Background Image CSS (Local image with blending effect) ---
 page_bg_img = '''
 <style>
 [data-testid="stAppViewContainer"] {
-    background-image: url("https://images.unsplash.com/photo-1601933470928-c1f4ebaa45a3?auto=format&fit=crop&w=1650&q=80");
+    background-image: url("image.jpg");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     background-attachment: fixed;
+    background-blend-mode: overlay;
+    background-color: rgba(0,0,0,0.4);
 }
 [data-testid="stHeader"], [data-testid="stToolbar"] {
     background-color: rgba(0, 0, 0, 0);
@@ -70,14 +72,17 @@ if st.button("🔍 Recommend"):
         st.error("Movie not found or not enough data.")
 st.markdown("</div>", unsafe_allow_html=True)
 
-# --- Genre Distribution Chart ---
+# --- Show/Hide Genre Distribution Chart ---
 st.markdown("---")
-st.subheader("📊 Genre Distribution (based on listed genres)")
-genre_counts = df["genres"].str.split('|').explode().value_counts()
+show_chart = st.checkbox("📊 Show Genre Distribution Chart")
 
-fig, ax = plt.subplots()
-genre_counts.plot(kind="bar", color="skyblue", ax=ax)
-ax.set_title("Movie Genre Distribution")
-ax.set_xlabel("Genre")
-ax.set_ylabel("Count")
-st.pyplot(fig)
+if show_chart:
+    st.subheader("📊 Genre Distribution (based on listed genres)")
+    genre_counts = df["genres"].str.split('|').explode().value_counts()
+
+    fig, ax = plt.subplots()
+    genre_counts.plot(kind="bar", color="skyblue", ax=ax)
+    ax.set_title("Movie Genre Distribution")
+    ax.set_xlabel("Genre")
+    ax.set_ylabel("Count")
+    st.pyplot(fig)
