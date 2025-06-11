@@ -32,7 +32,7 @@ st.write("")
 # --- Load CSV Dataset ---
 @st.cache_data
 def load_data():
-    df = pd.read_csv("movie_50_dataset.csv")
+    df = pd.read_csv("movies_50_dataset.csv")
     df = df.dropna(subset=["genres", "description"])
     df["content"] = df["genres"].astype(str) + " " + df["description"].astype(str)
     return df
