@@ -18,11 +18,8 @@ page_bg_img = '''
     background-repeat: no-repeat;
     background-attachment: fixed;
 }
-[data-testid="stHeader"] {
+[data-testid="stHeader"], [data-testid="stToolbar"] {
     background-color: rgba(0, 0, 0, 0);
-}
-[data-testid="stToolbar"] {
-    right: 2rem;
 }
 </style>
 '''
@@ -32,48 +29,46 @@ st.markdown(page_bg_img, unsafe_allow_html=True)
 st.markdown("<h1 style='color: white; text-align: center;'>🎥 Movie Recommendation System</h1>", unsafe_allow_html=True)
 st.write("")
 
-# --- Movie Dataset ---
-data = {
-    'title': [...],  # replace [...] with your 50 titles
-    'genres': [...],  # your genres list
-    'description': [...]  # your descriptions
-}
+# --- Load CSV Dataset ---
+@st.cache_data
+def load_data():
+    df = pd.read_csv("movie_50_dataset.csv")
+    df = df.dropna(subset=["genres", "description"])
+    df["content"] = df["genres"].astype(str) + " " + df["description"].astype(str)
+    return df
 
-df = pd.DataFrame(data)
+df = load_data()
 
-# Combine genres and descriptions
-df["content"] = df["genres"].fillna('') + " " + df["description"].fillna('')
-
-# TF-IDF + Cosine Similarity
+# --- TF-IDF and Cosine Similarity ---
 vectorizer = TfidfVectorizer(stop_words="english")
 tfidf_matrix = vectorizer.fit_transform(df["content"])
 cosine_sim = cosine_similarity(tfidf_matrix)
 
 # --- Recommendation Function ---
 def recommend_movie(title):
-    if title not in df['title'].values:
+    if title not in df["title"].values:
         return []
-
-    index = df[df['title'] == title].index[0]
+    index = df[df["title"] == title].index[0]
     similarity_scores = list(enumerate(cosine_sim[index]))
     similarity_scores = sorted(similarity_scores, key=lambda x: x[1], reverse=True)
     top_5 = similarity_scores[1:6]
     return [df.iloc[i[0]]["title"] for i in top_5]
 
 # --- Streamlit UI ---
+st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
 st.subheader("🎯 Select a movie you like:")
-
 movie_list = df["title"].sort_values().tolist()
-selected_movie = st.selectbox("Choose a movie", movie_list)
+selected_movie = st.selectbox("", movie_list)
 
 if st.button("🔍 Recommend"):
     recommendations = recommend_movie(selected_movie)
     if recommendations:
-        st.success("Because you liked **{}**, you might also enjoy:".format(selected_movie))
+        st.success(f"Because you liked **{selected_movie}**, you might also enjoy:")
         for movie in recommendations:
             st.markdown(f"- 🎬 {movie}")
     else:
         st.error("Movie not found or not enough data.")
+st.markdown("</div>", unsafe_allow_html=True)
 
 # --- Genre Distribution Chart ---
 st.markdown("---")
