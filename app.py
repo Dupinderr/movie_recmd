@@ -8,24 +8,37 @@ import matplotlib.pyplot as plt
 # --- Page Configuration ---
 st.set_page_config(page_title="🎬 Movie Recommender", layout="centered")
 
-# --- Background Image CSS (Local image with blending effect) ---
-page_bg_img = '''
+
+# --- Encode local image to base64 ---
+def get_base64_image(image_path):
+    with open(image_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+
+base64_img = get_base64_image("image.jpg")
+
+# --- CSS with gradient overlay ---
+page_bg_img = f'''
 <style>
-[data-testid="stAppViewContainer"] {
-    background-image: url("image.jpg");
+[data-testid="stAppViewContainer"] {{
+    background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
+                      url("data:image/jpg;base64,{base64_img}");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     background-attachment: fixed;
-    background-blend-mode: overlay;
-    background-color: rgba(0,0,0,0.4);
-}
-[data-testid="stHeader"], [data-testid="stToolbar"] {
-    background-color: rgba(0, 0, 0, 0);
-}
+}}
+
+[data-testid="stHeader"] {{
+    background-color: rgba(0,0,0,0);
+}}
+
+[data-testid="stToolbar"] {{
+    right: 2rem;
+}}
 </style>
 '''
 st.markdown(page_bg_img, unsafe_allow_html=True)
+
 
 # --- Title ---
 st.markdown("<h1 style='color: white; text-align: center;'>🎥 Movie Recommendation System</h1>", unsafe_allow_html=True)
