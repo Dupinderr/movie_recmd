@@ -4,36 +4,33 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib.pyplot as plt
+import base64
 
 # --- Page Configuration ---
 st.set_page_config(page_title="🎬 Movie Recommender", layout="centered")
 
-
-# --- Encode local image to base64 ---
-def get_base64_image(image_path):
+# Function to get base64 encoded image
+def get_base64_img(image_path):
     with open(image_path, "rb") as img_file:
-        return base64.b64encode(img_file.read()).decode()
+        encoded = base64.b64encode(img_file.read()).decode()
+    return encoded
 
-base64_img = get_base64_image("image.jpg")
+# Use your local image.jpg as background
+img_base64 = get_base64_img("image.jpg")
 
-# --- CSS with gradient overlay ---
 page_bg_img = f'''
 <style>
 [data-testid="stAppViewContainer"] {{
-    background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
-                      url("data:image/jpg;base64,{base64_img}");
+    background-image: url("data:image/jpg;base64,{img_base64}");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     background-attachment: fixed;
+    background-blend-mode: overlay;
+    background-color: rgba(0,0,0,0.4);
 }}
-
-[data-testid="stHeader"] {{
-    background-color: rgba(0,0,0,0);
-}}
-
-[data-testid="stToolbar"] {{
-    right: 2rem;
+[data-testid="stHeader"], [data-testid="stToolbar"] {{
+    background-color: rgba(0, 0, 0, 0);
 }}
 </style>
 '''
