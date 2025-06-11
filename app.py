@@ -1,96 +1,97 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import base64
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-import matplotlib.pyplot as plt
 
-# --- Page Configuration ---
-st.set_page_config(page_title="🎬 Movie Recommender", layout="centered")
+# --- Set page config ---
+st.set_page_config(page_title="🎬 Movie Recommender", layout="wide")
 
-# --- Encode local image to base64 ---
-def get_base64_image(image_path):
-    with open(image_path, "rb") as img_file:
-        return base64.b64encode(img_file.read()).decode()
+# --- Add background image with gradient ---
+def set_bg():
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
+                        url('image.jpg');
+            background-size: cover;
+            background-position: center;
+            color: white;
+        }}
+        .css-1d391kg {{
+            background-color: rgba(0, 0, 0, 0.5);
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
-base64_img = get_base64_image("image.jpg")
+set_bg()
 
-# --- CSS with gradient overlay ---
-page_bg_img = f'''
-<style>
-[data-testid="stAppViewContainer"] {{
-    background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
-                      url("data:image/jpg;base64,{base64_img}");
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-}}
+# --- App Title ---
+st.title("🎥 Movie Recommendation System")
 
-[data-testid="stHeader"] {{
-    background-color: rgba(0,0,0,0);
-}}
-
-[data-testid="stToolbar"] {{
-    right: 2rem;
-}}
-</style>
-'''
-st.markdown(page_bg_img, unsafe_allow_html=True)
-
-# --- Title ---
-st.markdown("<h1 style='color: white; text-align: center;'>🎥 Movie Recommendation System</h1>", unsafe_allow_html=True)
-st.write("")
-
-# --- Movie Dataset ---
+# --- Sample Movie Dataset ---
 data = {
-    'title': [...],  # Add full movie title list
-    'genres': [...],
-    'description': [...]
+    'title': [
+        'Inception', 'Interstellar', 'The Matrix', 'The Dark Knight', 'Pulp Fiction',
+        'Forrest Gump', 'Fight Club', 'The Shawshank Redemption', 'The Godfather', 'Parasite'
+    ],
+    'genres': [
+        'Action|Sci-Fi', 'Adventure|Drama|Sci-Fi', 'Action|Sci-Fi',
+        'Action|Crime|Drama', 'Crime|Drama',
+        'Drama|Romance', 'Drama', 'Drama', 'Crime|Drama', 'Thriller|Drama'
+    ],
+    'description': [
+        'A thief steals secrets through dream-sharing technology.',
+        'Explorers travel through a wormhole in space.',
+        'A hacker discovers the nature of his reality.',
+        'Batman faces the Joker who causes chaos in Gotham.',
+        'Mobsters, a boxer, and a gangster’s wife in crime tales.',
+        'Life journey of a kind-hearted man with low IQ.',
+        'An office worker joins an underground fight club.',
+        'Two imprisoned men bond and find redemption.',
+        'An aging crime boss transfers control to his son.',
+        'A poor family infiltrates a rich household.'
+    ]
 }
 
+# --- Convert to DataFrame ---
 df = pd.DataFrame(data)
 
+# --- Combine genres and description for content-based filtering ---
+df["genres"] = df["genres"].astype(str)
+df["description"] = df["description"].astype(str)
 df["content"] = df["genres"].fillna('') + " " + df["description"].fillna('')
 
-# TF-IDF + Cosine Similarity
+# --- Vectorization ---
 vectorizer = TfidfVectorizer(stop_words="english")
 tfidf_matrix = vectorizer.fit_transform(df["content"])
+
+# --- Cosine similarity matrix ---
 cosine_sim = cosine_similarity(tfidf_matrix)
 
-# --- Recommend Function ---
+# --- Movie Recommendation Function ---
 def recommend_movie(title):
     if title not in df['title'].values:
         return []
     index = df[df['title'] == title].index[0]
     similarity_scores = list(enumerate(cosine_sim[index]))
     similarity_scores = sorted(similarity_scores, key=lambda x: x[1], reverse=True)
-    top_5 = similarity_scores[1:6]
-    return [df.iloc[i[0]]["title"] for i in top_5]
+    top_indices = [i[0] for i in similarity_scores[1:6]]
+    return df.iloc[top_indices]["title"].tolist()
 
-# --- Streamlit UI ---
-st.subheader("🎯 Select a movie you like:")
-movie_list = df["title"].sort_values().tolist()
-selected_movie = st.selectbox("Choose a movie", movie_list)
+# --- Streamlit Interface ---
+st.markdown("### 💡 Select a movie to get similar recommendations")
 
-if st.button("🔍 Recommend"):
+movie_list = df['title'].tolist()
+selected_movie = st.selectbox("🎬 Choose a movie", movie_list)
+
+if st.button("Get Recommendations"):
     recommendations = recommend_movie(selected_movie)
     if recommendations:
-        st.success(f"Because you liked **{selected_movie}**, you might also enjoy:")
-        for movie in recommendations:
-            st.markdown(f"- 🎬 {movie}")
+        st.subheader(f"🎯 Because you liked '{selected_movie}', you may also like:")
+        for i, movie in enumerate(recommendations, start=1):
+            st.markdown(f"**{i}.** {movie}")
     else:
-        st.error("Movie not found or not enough data.")
-
-# --- Genre Distribution Chart ---
-st.markdown("---")
-st.subheader("📊 Genre Distribution (based on listed genres)")
-genre_counts = df["genres"].str.split('|').explode().value_counts()
-
-fig, ax = plt.subplots()
-genre_counts.plot(kind="bar", color="skyblue", ax=ax)
-ax.set_title("Movie Genre Distribution")
-ax.set_xlabel("Genre")
-ax.set_ylabel("Count")
-st.pyplot(fig)
+        st.warning("No recommendations found.")
