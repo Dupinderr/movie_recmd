@@ -32,6 +32,12 @@ page_bg_img = f'''
 [data-testid="stHeader"], [data-testid="stToolbar"] {{
     background-color: rgba(0, 0, 0, 0);
 }}
+.recommendation-box {{
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 10px;
+}}
 </style>
 '''
 st.markdown(page_bg_img, unsafe_allow_html=True)
@@ -75,9 +81,11 @@ selected_movie = st.selectbox("", movie_list)
 if st.button("🔍 Recommend"):
     recommendations = recommend_movie(selected_movie)
     if recommendations:
+        st.markdown(f'<div class="recommendation-box">', unsafe_allow_html=True)
         st.success(f"Because you liked **{selected_movie}**, you might also enjoy:")
         for movie in recommendations:
-            st.markdown(f"- 🎬 {movie}")
+            st.markdown(f"<p style='color: white;'>- 🎬 {movie}</p>", unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
     else:
         st.error("Movie not found or not enough data.")
 st.markdown("</div>", unsafe_allow_html=True)
