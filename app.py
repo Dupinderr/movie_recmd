@@ -3,35 +3,34 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# --- Set page config ---
+# --- Set Streamlit Page ---
 st.set_page_config(page_title="🎬 Movie Recommender", layout="wide")
 
-# --- Add background image with gradient ---
-def set_bg():
-    st.markdown(
-        f"""
-        <style>
-        .stApp {{
-            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
-                        url('image.jpg');
-            background-size: cover;
-            background-position: center;
-            color: white;
-        }}
-        .css-1d391kg {{
-            background-color: rgba(0, 0, 0, 0.5);
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+# --- Background Image Styling ---
+st.markdown("""
+    <style>
+    .stApp {
+        background-image: url('image.jpg');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+    }
+    .block-container {
+        background-color: rgba(0, 0, 0, 0.6);
+        padding: 2rem;
+        border-radius: 10px;
+    }
+    h1, h2, h3, .stMarkdown, .stText, .stSelectbox, .stButton {
+        color: white !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-set_bg()
-
-# --- App Title ---
+# --- Title ---
 st.title("🎥 Movie Recommendation System")
 
-# --- Sample Movie Dataset ---
+# --- Movie Dataset ---
 data = {
     'title': [
         'Inception', 'Interstellar', 'The Matrix', 'The Dark Knight', 'Pulp Fiction',
@@ -56,42 +55,35 @@ data = {
     ]
 }
 
-# --- Convert to DataFrame ---
 df = pd.DataFrame(data)
 
-# --- Combine genres and description for content-based filtering ---
-df["genres"] = df["genres"].astype(str)
-df["description"] = df["description"].astype(str)
-df["content"] = df["genres"].fillna('') + " " + df["description"].fillna('')
+# --- Fix: Convert columns to string before concatenation ---
+df["content"] = df["genres"].astype(str).fillna('') + " " + df["description"].astype(str).fillna('')
 
-# --- Vectorization ---
+# --- TF-IDF and Cosine Similarity ---
 vectorizer = TfidfVectorizer(stop_words="english")
 tfidf_matrix = vectorizer.fit_transform(df["content"])
-
-# --- Cosine similarity matrix ---
 cosine_sim = cosine_similarity(tfidf_matrix)
 
-# --- Movie Recommendation Function ---
+# --- Recommend Function ---
 def recommend_movie(title):
     if title not in df['title'].values:
         return []
-    index = df[df['title'] == title].index[0]
-    similarity_scores = list(enumerate(cosine_sim[index]))
-    similarity_scores = sorted(similarity_scores, key=lambda x: x[1], reverse=True)
-    top_indices = [i[0] for i in similarity_scores[1:6]]
-    return df.iloc[top_indices]["title"].tolist()
+    idx = df[df['title'] == title].index[0]
+    sim_scores = list(enumerate(cosine_sim[idx]))
+    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
+    top_indices = [i[0] for i in sim_scores[1:6]]
+    return df.iloc[top_indices]['title'].tolist()
 
-# --- Streamlit Interface ---
-st.markdown("### 💡 Select a movie to get similar recommendations")
-
-movie_list = df['title'].tolist()
-selected_movie = st.selectbox("🎬 Choose a movie", movie_list)
+# --- UI Interaction ---
+st.markdown("### 💡 Select a movie to get recommendations")
+movie = st.selectbox("🎬 Choose a movie", df['title'])
 
 if st.button("Get Recommendations"):
-    recommendations = recommend_movie(selected_movie)
-    if recommendations:
-        st.subheader(f"🎯 Because you liked '{selected_movie}', you may also like:")
-        for i, movie in enumerate(recommendations, start=1):
-            st.markdown(f"**{i}.** {movie}")
+    recs = recommend_movie(movie)
+    if recs:
+        st.subheader(f"🎯 Because you liked '{movie}', you may also like:")
+        for i, r in enumerate(recs, 1):
+            st.markdown(f"**{i}.** {r}")
     else:
         st.warning("No recommendations found.")
